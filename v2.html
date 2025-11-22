@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase képek</title>
+</head>
+
+<body>
+    <h1>Képek Supabase Storage-ből</h1>
+    <div id="gallery"></div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://ubtwsebslcgaltkgnild.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVidHdzZWJzbGNnYWx0a2duaWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0NDU0MTQsImV4cCI6MjA3OTAyMTQxNH0.Lm599H4dNzQt97VQTXGRIuGgi2wi9eWQXyxfuO4niFs";
+
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function listImages() {
+            const { data, error } = await client
+                .storage
+                .from('photos')
+                .list('photos', { limit: 200 });
+
+            console.log("Listázás eredménye:", data, error);
+
+            return data ?? [];
+        }
+
+        function getImageUrl(fileName) {
+            const { data } = client
+                .storage
+                .from('photos')
+                .getPublicUrl(`photos/${fileName}`);
+
+            return data.publicUrl;
+        }
+
+        async function showImages() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = 'Betöltés...';
+
+            const files = await listImages();
+
+            if (!files.length) {
+                gallery.innerHTML = 'Nincs fájl!';
+                return;
+            }
+
+            gallery.innerHTML = '';
+
+            files.forEach(file => {
+                const img = document.createElement('img');
+                img.src = getImageUrl(file.name);
+                img.style.maxWidth = '200px';
+                img.style.margin = '10px';
+
+                gallery.appendChild(img);
+            });
+        }
+
+        showImages();
+    </script>
+
+</body>
+
+</html>

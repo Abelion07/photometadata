@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Fotók térképen</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body{
+            user-select: none;
+        }
+
+        #map {
+            height: 800px;
+            width: 100%;
+        }
+
+        #photo-viewer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 50vw;
+            height: 50vh;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 9999;
+        }
+
+        #photo-viewer-content img {
+            max-width: 50%;
+            margin: 0 auto 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Bezárás kattintással */
+        #photo-viewer {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="photo-viewer">
+        <div id="photo-viewer-content">
+            <img id="viewer-img" src="">
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/exifr/dist/full.umd.js"></script>
+    <script src="urls.js"> </script>
+
+    <script>
+        // Itt sorolod fel a pictures mappában lévő képeket
+
+
+        const map = L.map('map').setView([47.4979, 19.0402], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        (async () => {
+            for (const url of imageUrls) {
+                try {
+                    const response = await fetch(`picture/${url}`);
+                    const blob = await response.blob();
+
+                    const exifData = await exifr.parse(blob);
+
+                    if (!exifData || !exifData.latitude || !exifData.longitude) continue;
+
+                    const lat = exifData.latitude;
+                    const lng = exifData.longitude;
+
+                    L.marker([lat, lng])
+                        .addTo(map)
+                        .on("click", () => showPhoto(url));
+
+
+                } catch (e) {
+                    // nincs hibakeresés, csak továbblép
+                }
+            }
+        })();
+
+        function showPhoto(url) {
+            document.getElementById("viewer-img").src = `picture/${url}`;
+            document.getElementById("photo-viewer").style.display = "flex";
+        }
+
+        // Bezárás overlayre kattintva
+        document.getElementById("photo-viewer").onclick = () => {
+            document.getElementById("photo-viewer").style.display = "none";
+        };
+
+    </script>
+</body>
+
+</html>
